@@ -1,0 +1,306 @@
+// Copyright 2026 Linu Alex. SPDX-License-Identifier: Apache-2.0
+// Slate Chessboard: the replay board for web pages. Look, controls, autoplay, game list and
+// appearance menus, on top of the stage (stage.js). API: README.md.
+import { SCHEMES, SCHEME_LABELS } from './theme.js';
+import { pieceSets as registeredSets } from './render.js';
+import { loadGame, plyRecord, moveLabel, lastPly as gameLastPly } from './game.js';
+import { create as createStage } from './stage.js';
+
+export const VERSION = '0.3.0';
+
+// The Slate look: the app's default board. Any stage theme key can be overridden per board.
+// pieceSet falls back along PIECE_ORDER to the first set the page has loaded.
+export const BOARD_THEME = {
+  scheme: 'mahogany', pieceSet: 'classic-staunton', coordinates: 'inside', lastMove: 'arrow',
+  frame: true, surface: 'transparent', moveDuration: 0.42,
+};
+const PIECE_ORDER = ['classic-staunton', 'modern-staunton'];
+// Piece sets, with the app's names. Only sets cleared for redistribution ship, as pieces/<id>.js.
+const PIECE_LABELS = { 'classic-staunton': 'Classic Staunton', 'modern-staunton': 'Modern Staunton' };
+const PIECE_ALIASES = { merida: 'classic-staunton', cburnett: 'modern-staunton' };
+
+/** Every board colour scheme: [{ id, label, light, dark }], in the app's order. */
+export function schemes() {
+  return Object.keys(SCHEMES).map((id) => ({ id, label: SCHEME_LABELS[id] || id, light: SCHEMES[id].light, dark: SCHEMES[id].dark }));
+}
+
+/** Piece sets loaded on this page: [{ id, label, licence }]. Load more with pieces/<name>.js. */
+export function pieceSets() {
+  const loaded = registeredSets();
+  const ids = PIECE_ORDER.filter((id) => loaded[id]);
+  for (const id of Object.keys(loaded)) if (!ids.includes(id)) ids.push(id);
+  return ids.map((id) => ({ id, label: PIECE_LABELS[id] || loaded[id].label || id, licence: loaded[id].licence }));
+}
+
+function pieceId(name) {
+  const id = PIECE_ALIASES[name] || name;
+  const have = pieceSets().map((p) => p.id);
+  if (!have.length) throw new Error('Slate Chessboard: no piece set loaded. Use slate-chessboard.all.js, or add <script src="pieces/classic-staunton.js"> after slate-chessboard.js.');
+  if (have.includes(id)) return id;
+  if (name && typeof console !== 'undefined') console.warn(`Slate Chessboard: piece set "${name}" isn't loaded (add pieces/${id}.js); using ${have[0]}.`);
+  return have[0];
+}
+function schemeId(name) {
+  if (name && typeof name === 'object') return name;            // custom { light, dark, hlLight, hlDark }
+  if (SCHEMES[name]) return name;
+  throw new Error(`Slate Chessboard: unknown board colours "${name}". Known: ${Object.keys(SCHEMES).join(', ')}`);
+}
+
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (_) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) { /* private mode */ } },
+};
+
+const ICONS = {
+  first: '<path d="M6 5h2v14H6zM20 5v14L9 12z"/>',
+  prev: '<path d="M17 5v14L6 12z"/>',
+  play: '<path d="M7 5v14l12-7z"/>',
+  pause: '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>',
+  next: '<path d="M7 5v14l11-7z"/>',
+  last: '<path d="M16 5h2v14h-2zM4 5v14l11-7z"/>',
+  flip: '<path d="M7 4 3 8l4 4V9h10V7H7zm10 8v3H7v2h10v3l4-4z"/>',
+};
+
+/** Splits a PGN file with one or more games into one string per game. */
+export function splitPGN(text) {
+  return String(text).replace(/\r\n?/g, '\n').split(/\n\s*\n(?=\[)/).map((s) => s.trim()).filter(Boolean);
+}
+
+function el(tag, cls, html) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (html != null) e.innerHTML = html;
+  return e;
+}
+
+function button(name, label, onClick) {
+  const b = el('button', 'sb-btn sb-' + name, `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`);
+  b.type = 'button';
+  b.setAttribute('aria-label', label);
+  b.title = label;
+  b.addEventListener('click', onClick);
+  return b;
+}
+
+const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/**
+ * Mounts a board in `host`. Options (all optional except games):
+ *   games       PGN string (one or many games) or an array of PGN strings / {pgn, label}
+ *   game        index of the first game (0)
+ *   autoplay    step through the moves on its own (true; false under reduced motion)
+ *   interval    ms between moves (1100); endPause: ms to hold the final position (3000)
+ *   loop        after the last move, go on to the next game (true)
+ *   controls    show the button bar (true); picker: show the game menu when there are 2+ games (true)
+ *   meta        show players, result and move counter above the board (true)
+ *   orientation "white" | "black"
+ *   scheme      board colours: an id from SlateChessboard.schemes() or { light, dark, hlLight, hlDark }
+ *   pieces      piece set id from SlateChessboard.pieceSets() ("classic-staunton", "modern-staunton")
+ *   appearance  show board-colour and piece menus in the bar (false)
+ *   remember    localStorage key: keep the visitor's scheme and pieces across visits (off)
+ *   theme       any other stage theme overrides (see BOARD_THEME and DEFAULT_THEME)
+ */
+export function create(host, opts = {}) {
+  const o = {
+    game: 0, autoplay: !reducedMotion(), interval: 1100, endPause: 3000, loop: true,
+    controls: true, picker: true, meta: true, orientation: 'white', ...opts,
+  };
+  let games = Array.isArray(o.games) ? o.games : splitPGN(o.games || '');
+  games = games.map((g) => (typeof g === 'string' ? { pgn: g } : g));
+  if (!games.length) throw new Error('Slate Chessboard: no games');
+
+  const listeners = {};
+  const emit = (ev, data) => (listeners[ev] || []).forEach((fn) => fn(data));
+  let index = Math.min(Math.max(0, o.game | 0), games.length - 1);
+  let timer = 0, holdUntil = 0, wantPlay = !!o.autoplay, visible = true;
+
+  host.classList.add('slate-chessboard');
+  host.innerHTML = '';
+  const meta = o.meta ? el('div', 'sb-meta') : null;
+  const stageEl = el('div', 'sb-stage');
+  const status = el('div', 'sb-sr');
+  status.setAttribute('aria-live', 'polite');
+  if (meta) host.appendChild(meta);
+  host.appendChild(stageEl);
+
+  const saved = (o.remember && store.get(o.remember)) || {};
+  let look = {
+    scheme: schemeId(saved.scheme || o.scheme || (o.theme && o.theme.scheme) || BOARD_THEME.scheme),
+    pieceSet: pieceId(saved.pieces || o.pieces || (o.theme && o.theme.pieceSet) || BOARD_THEME.pieceSet),
+  };
+  const stage = createStage(stageEl, {
+    pgn: games[index].pgn, controls: false, orientation: o.orientation,
+    theme: { ...BOARD_THEME, ...(o.theme || {}), ...look },
+  });
+  function applyLook(change) {
+    look = { ...look, ...change };
+    stage.setTheme(look);
+    if (o.remember) store.set(o.remember, { scheme: typeof look.scheme === 'string' ? look.scheme : undefined, pieces: look.pieceSet });
+    if (schemeMenu && typeof look.scheme === 'string') schemeMenu.value = look.scheme;
+    if (pieceMenu) pieceMenu.value = look.pieceSet;
+    emit('appearance', { scheme: look.scheme, pieces: look.pieceSet });
+  }
+
+  let playBtn = null, picker = null, schemeMenu = null, pieceMenu = null;
+  if (o.controls) {
+    const bar = el('div', 'sb-bar');
+    playBtn = button('play', 'Play', () => api.toggle());
+    bar.append(
+      button('first', 'Start of game', () => { api.pause(); api.first(); }),
+      button('prev', 'Previous move', () => { api.pause(); api.prev(); }),
+      playBtn,
+      button('next', 'Next move', () => { api.pause(); api.next(); }),
+      button('last', 'End of game', () => { api.pause(); api.last(); }),
+      button('flip', 'Flip board', () => api.flip()),
+    );
+    if (o.picker && games.length > 1) {
+      picker = el('select', 'sb-picker');
+      picker.setAttribute('aria-label', 'Choose a game');
+      games.forEach((g, i) => picker.add(new Option(label(i), i)));
+      picker.addEventListener('change', () => api.load(+picker.value));
+      bar.appendChild(picker);
+    }
+    host.appendChild(bar);
+    if (o.appearance) {
+      const look2 = el('div', 'sb-bar sb-appearance');
+      schemeMenu = el('select', 'sb-picker');
+      schemeMenu.setAttribute('aria-label', 'Board colours');
+      schemes().forEach((x) => schemeMenu.add(new Option(x.label, x.id)));
+      schemeMenu.value = typeof look.scheme === 'string' ? look.scheme : '';
+      schemeMenu.addEventListener('change', () => applyLook({ scheme: schemeMenu.value }));
+      pieceMenu = el('select', 'sb-picker');
+      pieceMenu.setAttribute('aria-label', 'Pieces');
+      pieceSets().forEach((x) => pieceMenu.add(new Option(x.label, x.id)));
+      pieceMenu.value = look.pieceSet;
+      pieceMenu.addEventListener('change', () => applyLook({ pieceSet: pieceMenu.value }));
+      look2.append(schemeMenu, pieceMenu);
+      host.appendChild(look2);
+    }
+  }
+  host.appendChild(status);
+
+  function headers() { return (stage.game && stage.game.headers) || {}; }
+  function label(i) {
+    if (games[i].label) return games[i].label;
+    const h = loadGame({ pgn: games[i].pgn }).headers || {};
+    return h.Opening || `${h.White || 'White'} vs ${h.Black || 'Black'}`;
+  }
+  function lastPly() { return gameLastPly(stage.game); }
+
+  function update() {
+    const ply = stage.state.ply, n = lastPly(), h = headers();
+    const rec = ply ? plyRecord(stage.game, ply) : null;
+    const moveText = rec ? moveLabel(rec) : 'Start';
+    if (meta) {
+      meta.innerHTML = '';
+      const who = el('b', 'sb-players');
+      who.textContent = `${h.White || 'White'} – ${h.Black || 'Black'}`;
+      const info = el('span', 'sb-info');
+      info.textContent = [h.Opening, `move ${Math.ceil(ply / 2)}/${Math.ceil(n / 2)}`, ply >= n && h.Result ? h.Result : null]
+        .filter(Boolean).join(' · ');
+      meta.append(who, info);
+    }
+    if (!timer) status.textContent = rec ? `After ${moveText}` : 'Starting position';
+    if (picker) picker.value = String(index);
+    if (playBtn) {
+      const on = !!timer;
+      playBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[on ? 'pause' : 'play']}</svg>`;
+      playBtn.setAttribute('aria-label', on ? 'Pause' : 'Play');
+      playBtn.title = on ? 'Pause' : 'Play';
+    }
+    emit('move', { game: index, ply, lastPly: n, move: rec, headers: h });
+  }
+
+  function tick() {
+    if (!visible) return;
+    if (stage.state.ply < lastPly()) { stage.next(); return; }
+    const now = Date.now();
+    if (!holdUntil) { holdUntil = now + o.endPause; return; }
+    if (now < holdUntil) return;
+    holdUntil = 0;
+    if (o.loop) api.load((index + 1) % games.length, { keepPlaying: true });
+    else api.pause();
+  }
+  function start() { if (!timer) { timer = setInterval(tick, o.interval); update(); } }
+  function stop() { if (timer) { clearInterval(timer); timer = 0; holdUntil = 0; update(); } }
+
+  // Only animate while on screen and the tab is visible: saves battery and keeps the page calm.
+  let io = null;
+  if (typeof IntersectionObserver !== 'undefined') {
+    io = new IntersectionObserver((es) => { visible = es.some((e) => e.isIntersecting) && !document.hidden; });
+    io.observe(host);
+  }
+  const onVis = () => { visible = !document.hidden; };
+  document.addEventListener('visibilitychange', onVis);
+  const onKey = (e) => { if (e.key === ' ' || e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') api.pause(); };
+  stageEl.addEventListener('keydown', onKey, true);
+  stage.on('ply', () => update()); // fires on every move, from the API, the bar or the keyboard
+
+  const api = {
+    version: VERSION,
+    /** The underlying stage: marks, arrows, variations (README, "Advanced"). */
+    stage,
+    get state() { return { game: index, ply: stage.state.ply, lastPly: lastPly(), playing: !!timer, orientation: stage.state.orientation }; },
+    get headers() { return headers(); },
+    play() { wantPlay = true; start(); return api; },
+    pause() { wantPlay = false; stop(); return api; },
+    toggle() { return timer ? api.pause() : api.play(); },
+    next() { stage.next(); return api; },
+    prev() { stage.prev(); return api; },
+    first() { stage.first(); return api; },
+    last() { stage.last(); return api; },
+    goto(ply) { stage.goto(ply); return api; },
+    flip() { stage.flip(); update(); return api; },
+    /** Board colours: an id from SlateChessboard.schemes(), or { light, dark, hlLight, hlDark }. */
+    setScheme(id) { applyLook({ scheme: schemeId(id) }); return api; },
+    /** Piece set: an id from SlateChessboard.pieceSets(). */
+    setPieces(id) { applyLook({ pieceSet: pieceId(id) }); return api; },
+    get appearance() { return { scheme: look.scheme, pieces: look.pieceSet }; },
+    setTheme(t) {
+      const { scheme, pieceSet, ...rest } = t || {};
+      stage.setTheme(rest);
+      if (scheme || pieceSet) applyLook({ ...(scheme ? { scheme: schemeId(scheme) } : {}), ...(pieceSet ? { pieceSet: pieceId(pieceSet) } : {}) });
+      return api;
+    },
+    /** Shows game `i` from the start. */
+    load(i, { keepPlaying = false } = {}) {
+      index = ((i % games.length) + games.length) % games.length;
+      holdUntil = 0;
+      stage.load({ pgn: games[index].pgn });
+      if (!keepPlaying && !wantPlay) stop();
+      emit('game', { game: index, headers: headers() });
+      return api;
+    },
+    /** Replaces the game list (PGN text or array) and shows the first one. */
+    setGames(list) {
+      games = (Array.isArray(list) ? list : splitPGN(list)).map((g) => (typeof g === 'string' ? { pgn: g } : g));
+      if (picker) { picker.innerHTML = ''; games.forEach((g, i) => picker.add(new Option(label(i), i))); }
+      return api.load(0, { keepPlaying: true });
+    },
+    on(ev, fn) { (listeners[ev] || (listeners[ev] = [])).push(fn); return api; },
+    destroy() {
+      stop(); io && io.disconnect();
+      document.removeEventListener('visibilitychange', onVis);
+      stage.destroy(); host.innerHTML = ''; host.classList.remove('slate-chessboard');
+    },
+  };
+
+  update();
+  if (wantPlay) start();
+  return api;
+}
+
+/** Mounts every <div data-slate-chessboard='{"interval":900}'> on the page. Games come from a child
+ *  <script type="application/x-chess-pgn">, the element's text, or a data-src URL. */
+export function autoInit(scope = document) {
+  return Promise.all([...scope.querySelectorAll('[data-slate-chessboard]:not([data-slate-chessboard-ready])')].map(async (node) => {
+    node.setAttribute('data-slate-chessboard-ready', '');
+    const attr = node.getAttribute('data-slate-chessboard');
+    const opts = attr && attr.trim().startsWith('{') ? JSON.parse(attr) : {};
+    const script = node.querySelector('script[type="application/x-chess-pgn"]');
+    let pgn = opts.games || (script ? script.textContent : node.textContent);
+    if (node.dataset.src) pgn = await (await fetch(node.dataset.src)).text();
+    node.slateBoard = create(node, { ...opts, games: pgn });
+    return node.slateBoard;
+  }));
+}

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slate Chessboard demo</title>
+<style>
+  :root { --bg: #fbfaf7; --text: #1d1d1f; --muted: #5f5f66; --line: #e4e0d8; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #111113; --text: #f2f2f4; --muted: #a3a3ab; --line: #2e2e33; } }
+  body { margin: 0; padding: 24px 16px 60px; background: var(--bg); color: var(--text); font: 16px/1.5 -apple-system, system-ui, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px; }
+  h2 { font-size: 17px; margin: 0 0 8px; } code { font-size: 13px; color: var(--muted); }
+  section { border-top: 1px solid var(--line); padding-top: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Slate Chessboard 0.3.0</h1>
+  <p>Serve this folder over http (for example <code>python3 -m http.server</code>) so <code>data-src</code> can load the PGN.</p>
+  <div class="grid">
+    <section><h2>Default</h2><code>SlateChessboard.create(el, { games })</code><div id="a"></div></section>
+    <section><h2>Modern Staunton on Navy, black at the bottom, appearance menus</h2><code>scheme: "navy", pieces: "modern-staunton", appearance: true</code><div id="b"></div></section>
+    <section><h2>No controls (hero style)</h2><code>controls: false, meta: false</code><div id="c"></div></section>
+    <section><h2>Auto-mounted</h2><code>&lt;div data-slate-chessboard data-src="games/showcase.pgn"&gt;</code>
+      <div data-slate-chessboard='{"autoplay": false}' data-src="games/showcase.pgn"></div></section>
+    <section><h2>Arrows and a side variation</h2><code>b.stage.setMarks(…), b.stage.openVariation(…)</code><div id="d"></div></section>
+  </div>
+</main>
+<script src="dist/slate-chessboard.all.js"></script>
+<script src="dist/pieces/modern-staunton.js"></script>
+<script>
+fetch("games/showcase.pgn").then(r => r.text()).then(games => {
+  SlateChessboard.create(document.getElementById("a"), { games });
+  SlateChessboard.create(document.getElementById("b"), { games, orientation: "black", scheme: "navy", pieces: "modern-staunton", appearance: true });
+  SlateChessboard.create(document.getElementById("c"), { games, controls: false, meta: false, interval: 700 });
+  const d = SlateChessboard.create(document.getElementById("d"), { games, autoplay: false, game: 1 });
+  d.goto("16.Nc3");                                   // the Immortal Game
+  d.stage.setMarks({ arrows: ["c3d5 green"], circles: ["d5 red"] });
+  d.stage.openVariation({ after: "16.Nc3", moves: ["Bb7", "Nd5"], label: "If 16...Bb7" });
+});
+</script>
+</body>
+</html>

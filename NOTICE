@@ -1,0 +1,16 @@
+Slate Chessboard
+Copyright 2026 Linu Alex
+
+Created by Linu Alex for Slate Chess (https://slatechess.com).
+https://github.com/alexlinu/slate-chessboard
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+If you redistribute it, or a work derived from it, keep this NOTICE file with it,
+as section 4(d) of the licence requires.
+
+This product includes third-party components under their own licences:
+  - chess.js, Copyright (c) Jeff Hlywa, BSD 2-Clause
+  - "Modern Staunton" pieces, after Colin M. L. Burnett (2006), BSD 3-Clause
+  - "Classic Staunton" pieces, after Chess Merida by Armando Hernandez Marroquin
+    (1998), via chess_merida_unicode, the Unlicense
+Full texts and details: THIRD-PARTY-NOTICES.md
