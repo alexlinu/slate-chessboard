@@ -1,12 +1,12 @@
 // Copyright 2026 Linu Alex. SPDX-License-Identifier: Apache-2.0
 // Slate Chessboard: the replay board for web pages. Look, controls, autoplay, game list and
 // appearance menus, on top of the stage (stage.js). API: README.md.
-import { SCHEMES, SCHEME_LABELS } from './theme.js';
+import { SCHEMES, SCHEME_LABELS, PIECE_COLOURS, PIECE_COLOUR_LABELS } from './theme.js';
 import { pieceSets as registeredSets } from './render.js';
 import { loadGame, plyRecord, moveLabel, lastPly as gameLastPly } from './game.js';
 import { create as createStage } from './stage.js';
 
-export const VERSION = '0.3.1';
+export const VERSION = '0.4.0';
 
 // The Slate look: the app's default board. Any stage theme key can be overridden per board.
 // pieceSet falls back along PIECE_ORDER to the first set the page has loaded.
@@ -22,6 +22,16 @@ const PIECE_ALIASES = { merida: 'classic-staunton', cburnett: 'modern-staunton' 
 /** Every board colour scheme: [{ id, label, light, dark }], in the app's order. */
 export function schemes() {
   return Object.keys(SCHEMES).map((id) => ({ id, label: SCHEME_LABELS[id] || id, light: SCHEMES[id].light, dark: SCHEMES[id].dark }));
+}
+
+/** Piece colours: [{ id, label, light, dark, line }], in the app's order. */
+export function pieceColours() {
+  return Object.keys(PIECE_COLOURS).map((id) => ({ id, label: PIECE_COLOUR_LABELS[id] || id, ...(PIECE_COLOURS[id] || {}) }));
+}
+function colourId(name) {
+  if (name && typeof name === 'object') return name;            // custom { light, dark, line? }
+  if (name in PIECE_COLOURS) return name;
+  throw new Error(`Slate Chessboard: unknown piece colours "${name}". Known: ${Object.keys(PIECE_COLOURS).join(', ')}`);
 }
 
 /** Piece sets loaded on this page: [{ id, label, licence }]. Load more with pieces/<name>.js. */
@@ -119,6 +129,7 @@ const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(pr
  *   orientation "white" | "black"
  *   scheme      board colours: an id from SlateChessboard.schemes() or { light, dark, hlLight, hlDark }
  *   pieces      piece set id from SlateChessboard.pieceSets() ("classic-staunton", "modern-staunton")
+ *   pieceColours piece colours from SlateChessboard.pieceColours() ("original", ..., "amberSky"), or { light, dark, line? }
  *   appearance  show board-colour and piece menus in the bar (false)
  *   remember    localStorage key: keep the visitor's scheme and pieces across visits (off)
  *   theme       any other stage theme overrides (see BOARD_THEME and DEFAULT_THEME)
@@ -151,6 +162,7 @@ export function create(host, opts = {}) {
   let look = {
     scheme: schemeId(saved.scheme || o.scheme || (o.theme && o.theme.scheme) || BOARD_THEME.scheme),
     pieceSet: pieceId(saved.pieces || o.pieces || (o.theme && o.theme.pieceSet) || BOARD_THEME.pieceSet),
+    pieceColours: colourId(saved.pieceColours || o.pieceColours || (o.theme && o.theme.pieceColours) || 'original'),
   };
   const stage = createStage(stageEl, {
     game: games[index], controls: false, orientation: o.orientation,
@@ -159,13 +171,15 @@ export function create(host, opts = {}) {
   function applyLook(change) {
     look = { ...look, ...change };
     stage.setTheme(look);
-    if (o.remember) store.set(o.remember, { scheme: typeof look.scheme === 'string' ? look.scheme : undefined, pieces: look.pieceSet });
+    if (o.remember) store.set(o.remember, { scheme: typeof look.scheme === 'string' ? look.scheme : undefined, pieces: look.pieceSet,
+      pieceColours: typeof look.pieceColours === 'string' ? look.pieceColours : undefined });
     if (schemeMenu && typeof look.scheme === 'string') schemeMenu.value = look.scheme;
     if (pieceMenu) pieceMenu.value = look.pieceSet;
-    emit('appearance', { scheme: look.scheme, pieces: look.pieceSet });
+    if (colourMenu && typeof look.pieceColours === 'string') colourMenu.value = look.pieceColours;
+    emit('appearance', { scheme: look.scheme, pieces: look.pieceSet, pieceColours: look.pieceColours });
   }
 
-  let playBtn = null, picker = null, schemeMenu = null, pieceMenu = null;
+  let playBtn = null, picker = null, schemeMenu = null, pieceMenu = null, colourMenu = null;
   if (o.controls) {
     const bar = el('div', 'sb-bar');
     playBtn = button('play', 'Play', () => api.toggle());
@@ -197,7 +211,12 @@ export function create(host, opts = {}) {
       pieceSets().forEach((x) => pieceMenu.add(new Option(x.label, x.id)));
       pieceMenu.value = look.pieceSet;
       pieceMenu.addEventListener('change', () => applyLook({ pieceSet: pieceMenu.value }));
-      look2.append(schemeMenu, pieceMenu);
+      colourMenu = el('select', 'sb-picker');
+      colourMenu.setAttribute('aria-label', 'Piece colours');
+      pieceColours().forEach((x) => colourMenu.add(new Option(x.label, x.id)));
+      colourMenu.value = typeof look.pieceColours === 'string' ? look.pieceColours : '';
+      colourMenu.addEventListener('change', () => applyLook({ pieceColours: colourMenu.value }));
+      look2.append(schemeMenu, pieceMenu, colourMenu);
       host.appendChild(look2);
     }
   }
@@ -283,11 +302,14 @@ export function create(host, opts = {}) {
     setScheme(id) { applyLook({ scheme: schemeId(id) }); return api; },
     /** Piece set: an id from SlateChessboard.pieceSets(). */
     setPieces(id) { applyLook({ pieceSet: pieceId(id) }); return api; },
-    get appearance() { return { scheme: look.scheme, pieces: look.pieceSet }; },
+    /** Piece colours: an id from SlateChessboard.pieceColours(), or { light, dark, line? }. */
+    setPieceColours(id) { applyLook({ pieceColours: colourId(id) }); return api; },
+    get appearance() { return { scheme: look.scheme, pieces: look.pieceSet, pieceColours: look.pieceColours }; },
     setTheme(t) {
-      const { scheme, pieceSet, ...rest } = t || {};
+      const { scheme, pieceSet, pieceColours, ...rest } = t || {};
       stage.setTheme(rest);
-      if (scheme || pieceSet) applyLook({ ...(scheme ? { scheme: schemeId(scheme) } : {}), ...(pieceSet ? { pieceSet: pieceId(pieceSet) } : {}) });
+      if (scheme || pieceSet || pieceColours) applyLook({ ...(scheme ? { scheme: schemeId(scheme) } : {}), ...(pieceSet ? { pieceSet: pieceId(pieceSet) } : {}),
+        ...(pieceColours ? { pieceColours: colourId(pieceColours) } : {}) });
       return api;
     },
     /** Shows game `i` from the start. */

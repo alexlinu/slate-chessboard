@@ -28,6 +28,7 @@ Rules that avoid common mistakes:
 - A single position: `SlateChessboard.create(el, { fen: "<FEN>" })`. `games` also accepts a FEN string, and so does the no-code embed. A placement-only FEN means White to move.
 - Several games in one string must be separated by a blank line before each `[Event` header block.
 - `scheme` is one of: mahogany (default), classic, teal, green, blue, cyan, red, oak, walnut, carrara, slate, midnight, sage, mustard, terracotta, blackWhite, ember, espresso, graphite, navy.
+- `pieceColours` is one of: original (default), ivoryGraphite, pearlSlate, champagneSteel, ivoryEspresso, blushBurgundy, creamCocoa, pistachioLagoon, sandClaret, porcelainNavy, parchmentMoss, amberSky. With a dark scheme (navy, graphite, espresso, ember, midnight) always use "amberSky", or black pieces disappear.
 - `pieces` is "classic-staunton" (default, inside the .all.js file) or "modern-staunton", which needs one more tag after the first: `<script src="slate-chessboard/dist/pieces/modern-staunton.js"></script>`.
 - For arrows, circles and variations use `board.stage` (see the annotate example). Arrow syntax: "e2e4 green"; circle: "d7 red".
 - There is no `ChessStage` global; everything is on `SlateChessboard` (`SlateChessboard.createStage` is the bare stage).

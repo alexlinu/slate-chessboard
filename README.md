@@ -10,7 +10,7 @@ By [Slate Chess](https://slatechess.com). Apache 2.0.
 <p align="center">
   <img src="docs/opera-game.svg" width="360" alt="The Opera Game after 16.Qb8+: Classic Staunton pieces on the Mahogany board, with a green last-move arrow, a blue arrow from d1 to d8 and a red circle on d8">
   &nbsp;
-  <img src="docs/immortal-game.svg" width="360" alt="The final position of the Immortal Game, 23.Be7#: Modern Staunton pieces on the Navy board">
+  <img src="docs/immortal-game.svg" width="360" alt="The final position of the Immortal Game, 23.Be7#: Classic Staunton pieces in Amber and Sky on the Navy board">
 </p>
 <p align="center"><sub>The Opera Game (Morphy, 1858) with arrows and a circle · the Immortal Game's final mate, on the Navy board. Drawn by the library (<code>npm run readme-image</code>).</sub></p>
 
@@ -117,7 +117,8 @@ npm run copy -- <dir>  # copy dist/, docs and examples into a folder of your sit
 | `orientation` | `"white"` | Side at the bottom |
 | `scheme` | `"mahogany"` | Board colours (below), or your own `{ light, dark, hlLight: [colour, opacity], hlDark: [...] }` |
 | `pieces` | `"classic-staunton"` | Piece set (below). Falls back to the first loaded set, with a console warning |
-| `appearance` | `false` | Board-colour and piece menus under the board, so visitors choose |
+| `pieceColours` | `"original"` | Piece colours (below), or your own `{ light, dark, line? }` |
+| `appearance` | `false` | Board-colour, piece and piece-colour menus under the board, so visitors choose |
 | `remember` | off | A localStorage key, e.g. `"slate-chessboard-look"`: keeps the visitor's choice across visits |
 | `theme` | Slate look | Other stage theme overrides (below) |
 
@@ -134,14 +135,16 @@ b.load(1);                    // show game 2 from the start
 b.setGames(otherPgnText);     // replace the list
 b.setScheme("navy");        // or { light, dark, hlLight, hlDark }
 b.setPieces("modern-staunton");
-b.appearance;                 // { scheme, pieces }
+b.setPieceColours("amberSky");   // or { light, dark, line? }
+b.appearance;                 // { scheme, pieces, pieceColours }
 SlateChessboard.schemes();         // [{ id, label, light, dark }] in the app's order
 SlateChessboard.pieceSets();       // [{ id, label, licence }] loaded on this page
+SlateChessboard.pieceColours();    // [{ id, label, light, dark, line }] in the app's order
 b.state;                      // { game, ply, lastPly, playing, orientation }
 b.headers;                    // PGN tags of the current game
 b.on("move", ({ game, ply, lastPly, move, headers }) => {});
 b.on("game", ({ game, headers }) => {});
-b.on("appearance", ({ scheme, pieces }) => {});
+b.on("appearance", ({ scheme, pieces, pieceColours }) => {});
 b.destroy();
 ```
 
@@ -165,6 +168,16 @@ the one in the app.
 
 Aliases: `merida`, `cburnett`. Your own set: `SlateChessboard.registerPieceSet({ name, pieces: { wK: { viewBox, body }, … } })`
 with all twelve pieces (`wK`…`bP`) as SVG markup, then `pieces: name`.
+
+**Piece colours** (`pieceColours`), the app's twelve: `original` (default, as drawn), `ivoryGraphite`, `pearlSlate`,
+`champagneSteel`, `ivoryEspresso`, `blushBurgundy`, `creamCocoa`, `pistachioLagoon`, `sandClaret`, `porcelainNavy`,
+`parchmentMoss`, and `amberSky`. On the dark boards (`ember`, `espresso`, `graphite`, `navy`, `midnight`) use
+**`amberSky`**: both sides are lit and told apart by hue (amber and sky blue) with one dark outline, so black pieces
+don't vanish into dark squares. Works with every piece set.
+
+```js
+SlateChessboard.create(el, { games, scheme: "navy", pieceColours: "amberSky" });
+```
 
 Other stage theme keys, through `theme` (`SlateChessboard.DEFAULT_THEME` has them all):
 

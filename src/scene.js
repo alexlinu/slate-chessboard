@@ -39,5 +39,5 @@ export function sceneBody(scene, theme, idp = 'cs') {
 export function sceneDocument(scene, theme, idp = 'cs') {
   const S = VIEW_SIZE;
   return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${S} ${S}" width="${S}" height="${S}">`
-    + `<defs>${pieceDefs(theme.pieceSet, idp)}</defs>${sceneBody(scene, theme, idp)}</svg>`;
+    + `<defs>${pieceDefs(theme.pieceSet, idp, theme.tint)}</defs>${sceneBody(scene, theme, idp)}</svg>`;
 }

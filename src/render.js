@@ -35,11 +35,24 @@ export const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '
 const n = (v) => Math.round(v * 100) / 100;
 const markColor = (c) => MARK_COLORS[c] || c || MARK_COLORS.green;
 
-/** <symbol> definitions for a piece set. Emit once per document. */
-export function pieceDefs(setName, idp) {
+// The artwork draws every piece in two colours: a fill (#fff) and a line (#000, or Mérida's #1f1a17).
+// White pieces are filled and outlined; black pieces are the same drawing inverted (line is the body,
+// fill the detail). Recolouring follows the app's Tools/bake-piece-tints.py exactly.
+const FILL = /#fff(?:fff)?\b/gi;
+const LINE = /#000(?:000)?\b|#1f1a17\b/gi;
+function tintBody(body, white, tint) {
+  if (!tint) return body;
+  let fill = tint.light, line = tint.dark;                  // classic pair: same swap for both sides
+  if (tint.line) { fill = white ? tint.light : tint.line; line = white ? tint.line : tint.dark; }
+  // Placeholders first, so a new colour never gets matched by the second replacement.
+  return body.replace(FILL, '\u0001').replace(LINE, '\u0002').split('\u0001').join(fill).split('\u0002').join(line);
+}
+
+/** <symbol> definitions for a piece set, in the theme's piece colours. Emit once per document. */
+export function pieceDefs(setName, idp, tint = null) {
   const set = pieceSet(setName);
   return Object.entries(set.pieces)
-    .map(([code, p]) => `<symbol id="${idp}-${code}" viewBox="${p.viewBox}">${p.body}</symbol>`)
+    .map(([code, p]) => `<symbol id="${idp}-${code}" viewBox="${p.viewBox}">${tintBody(p.body, code[0] === 'w', tint)}</symbol>`)
     .join('');
 }
 
@@ -221,7 +234,7 @@ export function boardSVG(board, theme, { x = 0, y = 0, size = 400, idp = 'cs' } 
 /** Standalone SVG document for one board: images, share cards, thumbnails. */
 export function boardDocument(board, theme, size = 640, idp = 'cs') {
   return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">`
-    + `<defs>${pieceDefs(theme.pieceSet, idp)}</defs>`
+    + `<defs>${pieceDefs(theme.pieceSet, idp, theme.tint)}</defs>`
     + `<rect width="${size}" height="${size}" fill="${theme.surface}"/>`
     + boardSVG(board, theme, { x: 0, y: 0, size, idp })
     + `</svg>`;

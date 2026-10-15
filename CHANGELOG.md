@@ -1,5 +1,12 @@
 # Slate Chessboard changelog
 
+## 0.4.0 (2026-10-15)
+
+- **Piece colours**: the app's twelve pairings (`pieceColours` option, `setPieceColours`, `SlateChessboard.pieceColours()`,
+  a third appearance menu, remembered with `remember`). Same names, hex values and recolouring rule as the app's
+  `PieceTint`. **Amber & Sky** lights both sides by hue with one shared outline: the pairing for the dark boards.
+- README: the dark-board diagram is now Classic Staunton in Amber & Sky on Navy.
+
 ## 0.3.1 (2026-10-15)
 
 - **FEN input**: a `fen` option shows one position (diagrams, puzzle starts); `games` and the no-code embed also accept

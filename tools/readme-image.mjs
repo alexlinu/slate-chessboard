@@ -17,7 +17,7 @@ const at = (game, ref) => { const ply = findPly(game, ref); return { fen: fenAt(
 out('opera-game.svg', boardDocument(
   { ...at(opera, '16.Qb8+'), ...parseMarks({ arrows: ['d1d8 blue'], circles: ['d8 red'] }) },
   resolveTheme({ scheme: 'mahogany', pieceSet: 'classic-staunton', surface: 'transparent' }), 480, 'op'));
-// The Immortal Game's final position, Modern Staunton on Navy.
+// The Immortal Game's final position: Classic Staunton in Amber & Sky on Navy, the app's dark-board pairing.
 out('immortal-game.svg', boardDocument(
   at(immortal, '23.Be7#'),
-  resolveTheme({ scheme: 'navy', pieceSet: 'modern-staunton', surface: 'transparent' }), 480, 'im'));
+  resolveTheme({ scheme: 'navy', pieceSet: 'classic-staunton', pieceColours: 'amberSky', surface: 'transparent' }), 480, 'im'));

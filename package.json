@@ -1,6 +1,6 @@
 {
   "name": "slate-chessboard",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "private": true,
   "description": "Animated chessboard for the web: replay PGN games with move animation, arrows and variations. 20 board colour schemes, Staunton pieces, one script tag, no dependencies. LLM-friendly (llms.txt).",
   "homepage": "https://github.com/alexlinu/slate-chessboard#readme",

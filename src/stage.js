@@ -145,7 +145,7 @@ export function create(el, opts = {}) {
 
   function load(source) {
     game = loadGame(source);
-    defs.innerHTML = pieceDefs(theme.pieceSet, idp);
+    defs.innerHTML = pieceDefs(theme.pieceSet, idp, theme.tint);
     ply = opts.ply !== undefined ? findPly(game, opts.ply) : (game.startFen.split(' ')[1] === 'b' ? 1 : 0);
     marks = { main: NO_MARKS, side: NO_MARKS };
     side = null; sideT = 0; anim = null; sideAnim = null;
@@ -175,7 +175,7 @@ export function create(el, opts = {}) {
     last() { step(lastPly(game), false); return api; },
     flip() { orientation = orientation === 'white' ? 'black' : 'white'; draw(); return api; },
     setOrientation(o) { orientation = o; draw(); return api; },
-    setTheme(t) { theme = resolveTheme({ ...theme, ...t, colors: undefined }); defs.innerHTML = pieceDefs(theme.pieceSet, idp); draw(); return api; },
+    setTheme(t) { theme = resolveTheme({ ...theme, ...t, colors: undefined, tint: undefined }); defs.innerHTML = pieceDefs(theme.pieceSet, idp, theme.tint); draw(); return api; },
     /** Marks on the board in front: { arrows, highlights, circles, badges }. */
     setMarks(m, board) { marks[board || (side ? 'side' : 'main')] = parseMarks(m); draw(); return api; },
     clearMarks() { marks = { main: NO_MARKS, side: NO_MARKS }; draw(); return api; },

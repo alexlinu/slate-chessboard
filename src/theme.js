@@ -38,6 +38,30 @@ export const SCHEME_LABELS = {
 };
 
 /** Teaching-mark colours. Picked to stay legible on every scheme above. */
+// Piece colours, named, ordered and valued as the app's PieceTint (Shared/PieceSet.swift).
+// light/dark: white's and black's colour; line (Amber & Sky only): one outline both sides share,
+// so both sides can be lit, which is what the dark boards need. null = the artwork's own colours.
+export const PIECE_COLOURS = {
+  original: null,
+  ivoryGraphite:   { light: '#F2F0E8', dark: '#3F4246' },
+  pearlSlate:      { light: '#E8EDF0', dark: '#46505A' },
+  champagneSteel:  { light: '#F3E7D0', dark: '#596979' },
+  ivoryEspresso:   { light: '#F5EBD7', dark: '#51483E' },
+  blushBurgundy:   { light: '#F7E8EE', dark: '#76293D' },
+  creamCocoa:      { light: '#F6E8D5', dark: '#35251F' },
+  pistachioLagoon: { light: '#E9F2BC', dark: '#2E4A50' },
+  sandClaret:      { light: '#F7E6C2', dark: '#7A2E35' },
+  porcelainNavy:   { light: '#EFF3F8', dark: '#1F3357' },
+  parchmentMoss:   { light: '#F2EAD3', dark: '#3A4A2A' },
+  amberSky:        { light: '#F9D978', dark: '#84D6EC', line: '#16100B' },
+};
+export const PIECE_COLOUR_LABELS = {
+  original: 'Original', ivoryGraphite: 'Ivory & Graphite', pearlSlate: 'Pearl & Slate',
+  champagneSteel: 'Champagne & Steel', ivoryEspresso: 'Ivory & Espresso', blushBurgundy: 'Blush & Burgundy',
+  creamCocoa: 'Cream & Cocoa', pistachioLagoon: 'Pistachio & Lagoon', sandClaret: 'Sand & Claret',
+  porcelainNavy: 'Porcelain & Navy', parchmentMoss: 'Parchment & Moss', amberSky: 'Amber & Sky',
+};
+
 export const MARK_COLORS = {
   green: '#219a3d',   // the app's LastMoveArrow fill
   red: '#d6402b',
@@ -50,6 +74,7 @@ export const MARK_COLORS = {
 export const DEFAULT_THEME = {
   scheme: 'mahogany',
   pieceSet: 'classic-staunton', // registered by pieces/classic-staunton.js (built into slate-chessboard.all.js)
+  pieceColours: 'original',   // a PIECE_COLOURS id, or { light, dark, line? }
   coordinates: 'inside',      // 'inside' | 'outside' | 'none'
   lastMove: 'arrow',          // 'arrow' | 'highlight' | 'both' | 'none'
   frame: true,                // the light inlay strip + hairline around the squares
@@ -71,5 +96,8 @@ export function resolveTheme(theme = {}) {
   const base = typeof t.scheme === 'string' ? SCHEMES[t.scheme] : t.scheme;
   if (!base) throw new Error(`Unknown colour scheme "${t.scheme}". Known: ${Object.keys(SCHEMES).join(', ')}`);
   t.colors = base;
+  const tint = typeof t.pieceColours === 'string' ? PIECE_COLOURS[t.pieceColours] : t.pieceColours;
+  if (tint === undefined) throw new Error(`Unknown piece colours "${t.pieceColours}". Known: ${Object.keys(PIECE_COLOURS).join(', ')}`);
+  t.tint = tint;
   return t;
 }
