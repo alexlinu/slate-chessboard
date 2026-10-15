@@ -16,7 +16,7 @@
 </head>
 <body>
 <main>
-  <h1>Slate Chessboard 0.3.0</h1>
+  <h1>Slate Chessboard 0.3.1</h1>
   <p>Serve this folder over http (for example <code>python3 -m http.server</code>) so <code>data-src</code> can load the PGN.</p>
   <div class="grid">
     <section><h2>Default</h2><code>SlateChessboard.create(el, { games })</code><div id="a"></div></section>
@@ -24,6 +24,7 @@
     <section><h2>No controls (hero style)</h2><code>controls: false, meta: false</code><div id="c"></div></section>
     <section><h2>Auto-mounted</h2><code>&lt;div data-slate-chessboard data-src="games/showcase.pgn"&gt;</code>
       <div data-slate-chessboard='{"autoplay": false}' data-src="games/showcase.pgn"></div></section>
+    <section><h2>A position from a FEN</h2><code>fen: "…"</code><div id="e"></div></section>
     <section><h2>Arrows and a side variation</h2><code>b.stage.setMarks(…), b.stage.openVariation(…)</code><div id="d"></div></section>
   </div>
 </main>
@@ -34,6 +35,7 @@ fetch("games/showcase.pgn").then(r => r.text()).then(games => {
   SlateChessboard.create(document.getElementById("a"), { games });
   SlateChessboard.create(document.getElementById("b"), { games, orientation: "black", scheme: "navy", pieces: "modern-staunton", appearance: true });
   SlateChessboard.create(document.getElementById("c"), { games, controls: false, meta: false, interval: 700 });
+  SlateChessboard.create(document.getElementById("e"), { fen: "r1bk3r/p2pBpNp/n4n2/1p1NP2P/6P1/3P4/P1P1K3/q5b1 b - - 1 23", scheme: "navy", pieces: "modern-staunton" });
   const d = SlateChessboard.create(document.getElementById("d"), { games, autoplay: false, game: 1 });
   d.goto("16.Nc3");                                   // the Immortal Game
   d.stage.setMarks({ arrows: ["c3d5 green"], circles: ["d5 red"] });

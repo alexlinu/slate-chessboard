@@ -1,8 +1,8 @@
 # Slate Chessboard
 
-> Animated chessboard for web pages: give it a PGN and it replays the game, with move animation, a last-move arrow, controls, a game picker, arrows and circles, side boards for variations, 20 board colour schemes and Staunton pieces. One script tag, no build step, no dependencies to install. Renders SVG.
+> Animated chessboard for web pages: give it a PGN and it replays the game (or a FEN and it shows the position), with move animation, a last-move arrow, controls, a game picker, arrows and circles, side boards for variations, 20 board colour schemes and Staunton pieces. One script tag, no build step, no dependencies to install. Renders SVG.
 
-One script tag is enough: `dist/slate-chessboard.all.js` holds the board, its stylesheet and the Classic Staunton pieces. Load it from a copy on your site, or from the CDN: `https://cdn.jsdelivr.net/gh/alexlinu/slate-chessboard@v0.3.0/dist/slate-chessboard.all.js`. Each board needs a container element and a PGN (one or more games).
+One script tag is enough: `dist/slate-chessboard.all.js` holds the board, its stylesheet and the Classic Staunton pieces. Load it from a copy on your site, or from the CDN: `https://cdn.jsdelivr.net/gh/alexlinu/slate-chessboard@v0.3.1/dist/slate-chessboard.all.js`. Each board needs a container element and a PGN (one or more games).
 
 Minimal page:
 
@@ -25,6 +25,7 @@ No code at all:
 
 Rules that avoid common mistakes:
 - Moves come as PGN or SAN text ("1. e4 e5 2. Nf3"), not coordinates like "e2e4".
+- A single position: `SlateChessboard.create(el, { fen: "<FEN>" })`. `games` also accepts a FEN string, and so does the no-code embed. A placement-only FEN means White to move.
 - Several games in one string must be separated by a blank line before each `[Event` header block.
 - `scheme` is one of: mahogany (default), classic, teal, green, blue, cyan, red, oak, walnut, carrara, slate, midnight, sage, mustard, terracotta, blackWhite, ember, espresso, graphite, navy.
 - `pieces` is "classic-staunton" (default, inside the .all.js file) or "modern-staunton", which needs one more tag after the first: `<script src="slate-chessboard/dist/pieces/modern-staunton.js"></script>`.

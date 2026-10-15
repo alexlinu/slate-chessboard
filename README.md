@@ -1,11 +1,18 @@
 # Slate Chessboard
 
-An animated chessboard for web pages. Give it a PGN and it replays the game: smooth move animation, a last-move
-arrow, controls, a game picker, arrows and circles, and a second board that slides in for variations. 20 board
-colour schemes, two Staunton piece sets, SVG rendering, one script tag, no dependencies to install.
+An animated chessboard for web pages. Give it a PGN and it replays the game, or a FEN and it shows the position:
+smooth move animation, a last-move arrow, controls, a game picker, arrows and circles, and a second board that
+slides in for variations. 20 board colour schemes, two Staunton piece sets, SVG rendering, one script tag, no
+dependencies to install.
 
-It is the board on [slatechess.com](https://slatechess.com), made by [Slate Chess](https://slatechess.com) and
-matching the look of the Slate Chess app. Apache 2.0.
+By [Slate Chess](https://slatechess.com). Apache 2.0.
+
+<p align="center">
+  <img src="docs/opera-game.svg" width="360" alt="The Opera Game after 16.Qb8+: Classic Staunton pieces on the Mahogany board, with a green last-move arrow, a blue arrow from d1 to d8 and a red circle on d8">
+  &nbsp;
+  <img src="docs/immortal-game.svg" width="360" alt="The final position of the Immortal Game, 23.Be7#: Modern Staunton pieces on the Navy board">
+</p>
+<p align="center"><sub>The Opera Game (Morphy, 1858) with arrows and a circle · the Immortal Game's final mate, on the Navy board. Drawn by the library (<code>npm run readme-image</code>).</sub></p>
 
 [Demo page](demo.html) · [Examples](examples/) · [llms.txt](llms.txt) · [Changelog](CHANGELOG.md)
 (Serve the folder over http to open the HTML pages, e.g. `python3 -m http.server`.)
@@ -14,7 +21,7 @@ matching the look of the Slate Chess app. Apache 2.0.
 
 ```html
 <div id="board"></div>
-<script src="https://cdn.jsdelivr.net/gh/alexlinu/slate-chessboard@v0.3.0/dist/slate-chessboard.all.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/alexlinu/slate-chessboard@v0.3.1/dist/slate-chessboard.all.js"></script>
 <script>
   SlateChessboard.create(document.getElementById("board"), {
     games: '[White "Paul Morphy"]\n[Black "Duke Karl / Count Isouard"]\n\n1. e4 e5 2. Nf3 d6 3. d4 Bg4 4. dxe5 Bxf3 5. Qxf3 dxe5 6. Bc4 Nf6 7. Qb3 Qe7 8. Nc3 c6 9. Bg5 b5 10. Nxb5 cxb5 11. Bxb5+ Nbd7 12. O-O-O Rd8 13. Rxd7 Rxd7 14. Rd1 Qe6 15. Bxd7+ Nxd7 16. Qb8+ Nxb8 17. Rd8# 1-0'
@@ -30,8 +37,17 @@ Or with no script of your own:
 
 ```html
 <div data-slate-chessboard='{"interval": 900}' data-src="games/showcase.pgn"></div>
-<script src="https://cdn.jsdelivr.net/gh/alexlinu/slate-chessboard@v0.3.0/dist/slate-chessboard.all.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/alexlinu/slate-chessboard@v0.3.1/dist/slate-chessboard.all.js"></script>
 ```
+
+A position instead of a game, for diagrams and puzzles:
+
+```js
+SlateChessboard.create(el, { fen: "r1bk3r/p2pBpNp/n4n2/1p1NP2P/6P1/3P4/P1P1K3/q5b1 b - - 1 23" });
+```
+
+`games` also takes a FEN (or a list mixing PGN and FEN), and so does the no-code embed. A FEN with only the piece
+placement is read as White to move.
 
 `data-src` needs the page served over http(s); for a file opened from disk, put the PGN inside the element
 in a `<script type="application/x-chess-pgn">…</script>` child.
@@ -84,13 +100,14 @@ npm run copy -- <dir>  # copy dist/, docs and examples into a folder of your sit
 
 ## Options
 
-`SlateChessboard.create(element, options)` returns a board. All options are optional except `games`.
+`SlateChessboard.create(element, options)` returns a board. All options are optional except `games` (or `fen`).
 
 | Option | Default | Meaning |
 |---|---|---|
-| `games` | — | PGN text with one or more games, or an array of PGN strings or `{ pgn, label }` |
+| `games` | — | PGN text with one or more games, a FEN, or an array of PGN / FEN strings or `{ pgn \| fen, label }` |
+| `fen` | — | One position to show instead of `games` (a diagram or a puzzle start) |
 | `game` | `0` | Which game to show first |
-| `autoplay` | `true` | Step through the moves on its own (off when the user asks for reduced motion) |
+| `autoplay` | `true` | Step through the moves on its own (off when the user asks for reduced motion, and for positions given as FEN) |
 | `interval` | `1100` | Milliseconds between moves |
 | `endPause` | `3000` | Milliseconds to hold the final position |
 | `loop` | `true` | After a game ends, go on to the next one (back to the first after the last) |

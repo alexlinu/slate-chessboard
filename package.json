@@ -1,6 +1,6 @@
 {
   "name": "slate-chessboard",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "Animated chessboard for the web: replay PGN games with move animation, arrows and variations. 20 board colour schemes, Staunton pieces, one script tag, no dependencies. LLM-friendly (llms.txt).",
   "homepage": "https://github.com/alexlinu/slate-chessboard#readme",
@@ -23,7 +23,8 @@
     "build": "node tools/build.mjs",
     "test": "node tools/build.mjs && node --test 'test/*.test.js'",
     "pieces": "python3 tools/build_pieces.py",
-    "copy": "node tools/copy-dist.mjs"
+    "copy": "node tools/copy-dist.mjs",
+    "readme-image": "node tools/readme-image.mjs"
   },
   "dependencies": {
     "chess.js": "1.4.0"

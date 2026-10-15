@@ -157,3 +157,19 @@ test('parseMarks reads every shorthand and rejects bad squares', () => {
   });
   assert.throws(() => SC.parseMarks({ circles: ['z9'] }), /Bad square/);
 });
+
+test('FEN input: isFEN and toGames tell positions from PGN', () => {
+  const fen = 'r1bk3r/p2pBpNp/n4n2/1p1NP2P/6P1/3P4/P1P1K3/q5b1 b - - 1 23';
+  assert.ok(SC.isFEN(fen));
+  assert.ok(SC.isFEN('8/8/8/8/8/8/8/K6k'));
+  assert.ok(!SC.isFEN('1. e4 e5'));
+  assert.ok(!SC.isFEN(showcase));
+  assert.deepEqual(SC.toGames(fen), [{ fen }]);
+  assert.deepEqual(SC.toGames('8/8/8/8/8/8/8/K6k'), [{ fen: '8/8/8/8/8/8/8/K6k w - - 0 1' }]);
+  assert.deepEqual(SC.toGames([fen, '1. e4 e5', { fen, label: 'Mate' }]).map((g) => Object.keys(g).join()), ['fen', 'pgn', 'fen,label']);
+  assert.equal(SC.toGames(showcase).length, 3);
+  const g = SC.loadGame(SC.toGames(fen)[0]);
+  assert.equal(SC.lastPly(g), 0);
+  assert.equal(SC.fenAt(g, 0), fen);
+  assert.throws(() => SC.loadGame(SC.toGames('8/8/8/8/8/8/8/9')[0] ?? { fen: 'bad' }));
+});

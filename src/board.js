@@ -6,7 +6,7 @@ import { pieceSets as registeredSets } from './render.js';
 import { loadGame, plyRecord, moveLabel, lastPly as gameLastPly } from './game.js';
 import { create as createStage } from './stage.js';
 
-export const VERSION = '0.3.0';
+export const VERSION = '0.3.1';
 
 // The Slate look: the app's default board. Any stage theme key can be overridden per board.
 // pieceSet falls back along PIECE_ORDER to the first set the page has loaded.
@@ -61,6 +61,28 @@ const ICONS = {
   flip: '<path d="M7 4 3 8l4 4V9h10V7H7zm10 8v3H7v2h10v3l4-4z"/>',
 };
 
+const FEN_RE = /^[pnbrqkPNBRQK1-8]+(\/[pnbrqkPNBRQK1-8]+){7}(\s|$)/;
+
+/** True for a FEN (a full one, or just the piece placement), as opposed to PGN text. */
+export function isFEN(text) { return FEN_RE.test(String(text).trim()); }
+
+/**
+ * Normalises `games` into [{ pgn } | { fen }, ...]: PGN text with one or many games, a FEN, or an
+ * array of PGN strings, FEN strings or { pgn | fen, label } objects. A FEN with only the piece
+ * placement gets "w - - 0 1" (White to move, no castling).
+ */
+export function toGames(list) {
+  const items = Array.isArray(list) ? list : isFEN(list) ? [list] : splitPGN(list || '');
+  return items.map((g) => {
+    if (typeof g === 'string') g = isFEN(g) ? { fen: g } : { pgn: g };
+    if (g.fen) {
+      const fen = String(g.fen).trim();
+      return { ...g, fen: fen.includes(' ') ? fen : `${fen} w - - 0 1` };
+    }
+    return g;
+  });
+}
+
 /** Splits a PGN file with one or more games into one string per game. */
 export function splitPGN(text) {
   return String(text).replace(/\r\n?/g, '\n').split(/\n\s*\n(?=\[)/).map((s) => s.trim()).filter(Boolean);
@@ -86,9 +108,10 @@ const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(pr
 
 /**
  * Mounts a board in `host`. Options (all optional except games):
- *   games       PGN string (one or many games) or an array of PGN strings / {pgn, label}
+ *   games       PGN text (one or many games), a FEN, or an array of PGN / FEN strings or {pgn | fen, label}
+ *   fen         a single position to show instead of games (a diagram or a puzzle start)
  *   game        index of the first game (0)
- *   autoplay    step through the moves on its own (true; false under reduced motion)
+ *   autoplay    step through the moves on its own (true; false under reduced motion or for positions only)
  *   interval    ms between moves (1100); endPause: ms to hold the final position (3000)
  *   loop        after the last move, go on to the next game (true)
  *   controls    show the button bar (true); picker: show the game menu when there are 2+ games (true)
@@ -105,9 +128,10 @@ export function create(host, opts = {}) {
     game: 0, autoplay: !reducedMotion(), interval: 1100, endPause: 3000, loop: true,
     controls: true, picker: true, meta: true, orientation: 'white', ...opts,
   };
-  let games = Array.isArray(o.games) ? o.games : splitPGN(o.games || '');
-  games = games.map((g) => (typeof g === 'string' ? { pgn: g } : g));
-  if (!games.length) throw new Error('Slate Chessboard: no games');
+  let games = toGames(o.fen ? [{ fen: o.fen }] : o.games);
+  if (!games.length) throw new Error('Slate Chessboard: no games (give it PGN text or a FEN)');
+  // Positions alone have nothing to play through, so they start paused unless autoplay is asked for.
+  if (opts.autoplay === undefined && games.every((g) => g.fen)) o.autoplay = false;
 
   const listeners = {};
   const emit = (ev, data) => (listeners[ev] || []).forEach((fn) => fn(data));
@@ -129,7 +153,7 @@ export function create(host, opts = {}) {
     pieceSet: pieceId(saved.pieces || o.pieces || (o.theme && o.theme.pieceSet) || BOARD_THEME.pieceSet),
   };
   const stage = createStage(stageEl, {
-    pgn: games[index].pgn, controls: false, orientation: o.orientation,
+    game: games[index], controls: false, orientation: o.orientation,
     theme: { ...BOARD_THEME, ...(o.theme || {}), ...look },
   });
   function applyLook(change) {
@@ -182,7 +206,8 @@ export function create(host, opts = {}) {
   function headers() { return (stage.game && stage.game.headers) || {}; }
   function label(i) {
     if (games[i].label) return games[i].label;
-    const h = loadGame({ pgn: games[i].pgn }).headers || {};
+    if (games[i].fen) return `Position ${i + 1}`;
+    const h = loadGame(games[i]).headers || {};
     return h.Opening || `${h.White || 'White'} vs ${h.Black || 'Black'}`;
   }
   function lastPly() { return gameLastPly(stage.game); }
@@ -194,9 +219,12 @@ export function create(host, opts = {}) {
     if (meta) {
       meta.innerHTML = '';
       const who = el('b', 'sb-players');
-      who.textContent = `${h.White || 'White'} – ${h.Black || 'Black'}`;
+      // A bare position (a FEN with no moves) has no players or move count, just the side to move.
+      const position = !n && !h.White && !h.Black;
+      who.textContent = position ? 'Position' : `${h.White || 'White'} – ${h.Black || 'Black'}`;
       const info = el('span', 'sb-info');
-      info.textContent = [h.Opening, `move ${Math.ceil(ply / 2)}/${Math.ceil(n / 2)}`, ply >= n && h.Result ? h.Result : null]
+      const toMove = stage.game.startFen.split(' ')[1] === 'b' ? 'Black to move' : 'White to move';
+      info.textContent = [h.Opening, n ? `move ${Math.ceil(ply / 2)}/${Math.ceil(n / 2)}` : toMove, ply >= n && h.Result ? h.Result : null]
         .filter(Boolean).join(' · ');
       meta.append(who, info);
     }
@@ -266,14 +294,14 @@ export function create(host, opts = {}) {
     load(i, { keepPlaying = false } = {}) {
       index = ((i % games.length) + games.length) % games.length;
       holdUntil = 0;
-      stage.load({ pgn: games[index].pgn });
+      stage.load(games[index]);
       if (!keepPlaying && !wantPlay) stop();
       emit('game', { game: index, headers: headers() });
       return api;
     },
     /** Replaces the game list (PGN text or array) and shows the first one. */
     setGames(list) {
-      games = (Array.isArray(list) ? list : splitPGN(list)).map((g) => (typeof g === 'string' ? { pgn: g } : g));
+      games = toGames(list);
       if (picker) { picker.innerHTML = ''; games.forEach((g, i) => picker.add(new Option(label(i), i))); }
       return api.load(0, { keepPlaying: true });
     },
@@ -291,7 +319,7 @@ export function create(host, opts = {}) {
 }
 
 /** Mounts every <div data-slate-chessboard='{"interval":900}'> on the page. Games come from a child
- *  <script type="application/x-chess-pgn">, the element's text, or a data-src URL. */
+ *  <script type="application/x-chess-pgn">, the element's text, or a data-src URL: PGN or a FEN. */
 export function autoInit(scope = document) {
   return Promise.all([...scope.querySelectorAll('[data-slate-chessboard]:not([data-slate-chessboard-ready])')].map(async (node) => {
     node.setAttribute('data-slate-chessboard-ready', '');

@@ -1,5 +1,12 @@
 # Slate Chessboard changelog
 
+## 0.3.1 (2026-10-15)
+
+- **FEN input**: a `fen` option shows one position (diagrams, puzzle starts); `games` and the no-code embed also accept
+  a FEN, or a list mixing PGN and FEN. A placement-only FEN is read as White to move. A position with no moves shows
+  "Position" and the side to move instead of players and a move count. New helpers: `isFEN`, `toGames`.
+- README diagrams, drawn by the library (`npm run readme-image`).
+
 ## 0.3.0 (2026-10-15)
 
 First public release.
