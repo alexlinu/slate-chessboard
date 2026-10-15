@@ -49,9 +49,9 @@ Separate files, if you'd rather choose: `dist/slate-chessboard.css` + `dist/slat
 - [Arrows and a variation](examples/annotate.html): pause, mark squares, open a side board
 - [No-code embed](examples/embed.html): data attributes only
 
-## Licence
+## License
 
-Apache 2.0, free for commercial use. Keep the NOTICE file with any redistributed copy. A "Board by Slate Chess" credit link is appreciated.
+Apache License 2.0, Copyright 2026 Linu Alex. Commercial use, modification and redistribution are permitted. Anyone redistributing the library or a derivative work must include a copy of the License, mark modified files, retain the copyright and attribution notices, and include the attribution notices from the NOTICE file (Section 4). The License grants no rights to the names "Slate Chess" or "Slate Chessboard" beyond describing the origin of the work (Section 6).
 
 ## Optional
 
