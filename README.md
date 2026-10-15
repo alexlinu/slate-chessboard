@@ -1,5 +1,18 @@
 # Slate Chessboard
 
+<p align="center">
+  <a href="https://slatechess.com/opensource/slate-chessboard-demo.html"><b>Live demo &amp; playground</b></a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="https://slatechess.com/opensource/slate-chessboard-demo.html#recipes">Recipes</a> ·
+  <a href="llms.txt">llms.txt</a> ·
+  <a href="CHANGELOG.md">Changelog</a>
+</p>
+<p align="center">
+  <a href="https://github.com/alexlinu/slate-chessboard/tags"><img alt="Version" src="https://img.shields.io/github/v/tag/alexlinu/slate-chessboard?label=version&color=c4611f"></a>
+  <a href="LICENSE"><img alt="Licence: Apache 2.0" src="https://img.shields.io/badge/licence-Apache%202.0-blue"></a>
+  <img alt="Setup: one script tag" src="https://img.shields.io/badge/setup-one%20script%20tag-brightgreen">
+</p>
+
 An animated chessboard for web pages. Give it a PGN and it replays the game, or a FEN and it shows the position:
 smooth move animation, a last-move arrow, controls, a game picker, arrows and circles, and a second board that
 slides in for variations. 20 board colour schemes, two Staunton piece sets, SVG rendering, one script tag, no
@@ -8,13 +21,13 @@ dependencies to install.
 By [Slate Chess](https://slatechess.com). Apache 2.0.
 
 <p align="center">
-  <img src="docs/opera-game.svg" width="360" alt="The Opera Game after 16.Qb8+: Classic Staunton pieces on the Mahogany board, with a green last-move arrow, a blue arrow from d1 to d8 and a red circle on d8">
+  <a href="https://slatechess.com/opensource/slate-chessboard-demo.html"><img src="docs/opera-game.svg" width="360" alt="The Opera Game after 16.Qb8+: Classic Staunton pieces on the Mahogany board, with a green last-move arrow, a blue arrow from d1 to d8 and a red circle on d8"></a>
   &nbsp;
-  <img src="docs/immortal-game.svg" width="360" alt="The final position of the Immortal Game, 23.Be7#: Classic Staunton pieces in Amber and Sky on the Navy board">
+  <a href="https://slatechess.com/opensource/slate-chessboard-demo.html"><img src="docs/immortal-game.svg" width="360" alt="The final position of the Immortal Game, 23.Be7#: Classic Staunton pieces in Amber and Sky on the Navy board"></a>
 </p>
 <p align="center"><sub>The Opera Game (Morphy, 1858) with arrows and a circle · the Immortal Game's final mate, on the Navy board. Drawn by the library (<code>npm run readme-image</code>).</sub></p>
 
-[Demo page](demo.html) · [Examples](examples/) · [llms.txt](llms.txt) · [Changelog](CHANGELOG.md)
+[Live demo](https://slatechess.com/opensource/slate-chessboard-demo.html) · [Local demo page](demo.html) · [Examples](examples/) · [llms.txt](llms.txt) · [Changelog](CHANGELOG.md)
 (Serve the folder over http to open the HTML pages, e.g. `python3 -m http.server`.)
 
 ## Quick start

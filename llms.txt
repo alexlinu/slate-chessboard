@@ -37,6 +37,8 @@ Separate files, if you'd rather choose: `dist/slate-chessboard.css` + `dist/slat
 
 ## Docs
 
+- [Live demo and playground](https://slatechess.com/opensource/slate-chessboard-demo.html): every option live, with copyable code
+
 - [README](README.md): every option, method, event, colour scheme and piece set
 - [NOTICE](THIRD-PARTY-NOTICES.md): licences (chess.js BSD-2, piece sets)
 

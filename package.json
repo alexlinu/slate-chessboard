@@ -3,22 +3,51 @@
   "version": "0.4.0",
   "private": true,
   "description": "Animated chessboard for the web: replay PGN games with move animation, arrows and variations. 20 board colour schemes, Staunton pieces, one script tag, no dependencies. LLM-friendly (llms.txt).",
-  "homepage": "https://github.com/alexlinu/slate-chessboard#readme",
-  "repository": { "type": "git", "url": "git+https://github.com/alexlinu/slate-chessboard.git" },
-  "bugs": { "url": "https://github.com/alexlinu/slate-chessboard/issues" },
-  "keywords": ["chess", "chessboard", "chess-board", "pgn", "pgn-viewer", "replay", "svg", "animation", "diagram", "variations"],
+  "homepage": "https://slatechess.com/opensource/slate-chessboard-demo.html",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexlinu/slate-chessboard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/alexlinu/slate-chessboard/issues"
+  },
+  "keywords": [
+    "chess",
+    "chessboard",
+    "chess-board",
+    "pgn",
+    "pgn-viewer",
+    "replay",
+    "svg",
+    "animation",
+    "diagram",
+    "variations"
+  ],
   "type": "module",
   "main": "dist/slate-chessboard.mjs",
   "module": "dist/slate-chessboard.mjs",
   "browser": "dist/slate-chessboard.js",
   "exports": {
-    ".": { "import": "./dist/slate-chessboard.mjs", "default": "./dist/slate-chessboard.js" },
+    ".": {
+      "import": "./dist/slate-chessboard.mjs",
+      "default": "./dist/slate-chessboard.js"
+    },
     "./src": "./src/index.js",
     "./all": "./dist/slate-chessboard.all.js",
     "./slate-chessboard.css": "./dist/slate-chessboard.css",
     "./pieces/*": "./dist/pieces/*"
   },
-  "files": ["dist/", "src/", "llms.txt", "README.md", "CHANGELOG.md", "LICENSE", "NOTICE", "THIRD-PARTY-NOTICES.md", "examples/"],
+  "files": [
+    "dist/",
+    "src/",
+    "llms.txt",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "NOTICE",
+    "THIRD-PARTY-NOTICES.md",
+    "examples/"
+  ],
   "scripts": {
     "build": "node tools/build.mjs",
     "test": "node tools/build.mjs && node --test 'test/*.test.js'",
